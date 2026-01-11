@@ -1,3 +1,5 @@
+
+
 data = [
     # Ate spicy food, Ate 2+ meals, Hydrated, Label
     [True,  True,  True,  "Yes"],   # matches your criteria
@@ -11,11 +13,16 @@ data = [
 ]
 
 def log2(x):
-    n = 0
-    while x > 1:
+    if x <= 0: return 0
+    tot = 0
+    while x < 1:
+        x *= 2
+        res -= 1
+    while x > 2:
         x /= 2
-        n += 1
-    return n
+        res += 1
+    return res
+    
 
 def entropy(r):
     #COUNT LABELS
@@ -27,12 +34,12 @@ def entropy(r):
         count[label] += 1
     #setup for entropy
     length = len(r)
-    ent = 0
+    impurity = 1
     #actual entropy
     for l in count:
         probability = count[l] / length
-        ent -= probability * log2(probability)
-    return ent
+        impurity -= probability**2
+    return impurity
 
 #GET FEATURES
 def split(row, col):
@@ -104,5 +111,5 @@ def prediction(tree, r):
     return prediction(tree.branches[value], r)
 
 train = build(data)
-test = [True, False, False]
+test = [True, True, True]
 print(prediction(train, test))
