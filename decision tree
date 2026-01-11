@@ -1,0 +1,108 @@
+data = [
+    # Ate spicy food, Ate 2+ meals, Hydrated, Label
+    [True,  True,  True,  "Yes"],   # matches your criteria
+    [True,  True,  False, "Yes"],   # maybe still pooped
+    [True,  False, True,  "No"],    # not enough meals
+    [False, True,  True,  "No"],    # no spicy food
+    [False, False, True,  "No"],    # nothing triggers
+    [True,  False, False, "No"],    # not enough meals, not hydrated
+    [False, True,  False, "No"],    # no spicy food, less hydration
+    [False, False, False, "No"]     # nothing triggers
+]
+
+def log2(x):
+    n = 0
+    while x > 1:
+        x /= 2
+        n += 1
+    return n
+
+def entropy(r):
+    #COUNT LABELS
+    count = {}
+    for row in r:
+        label = row[-1]
+        if label not in count:
+            count[label] = 0
+        count[label] += 1
+    #setup for entropy
+    length = len(r)
+    ent = 0
+    #actual entropy
+    for l in count:
+        probability = count[l] / length
+        ent -= probability * log2(probability)
+    return ent
+
+#GET FEATURES
+def split(row, col):
+    grp_features = {}
+    for r in row:
+        val = r[col]
+        if val not in grp_features:
+            grp_features[val] = []
+        grp_features[val].append(r)
+    return grp_features
+
+#found how good a split is
+def gi_split(row, col):
+    result_ent = entropy(row)
+    groups = split(row, col)
+    weighted_ent = 0
+    for group in groups.values():
+        weight = (len(group) / len(row))
+        weighted_ent += weight * entropy(group)
+    return result_ent - weighted_ent
+
+def best_split(rows):
+    #setup
+    bg = 0
+    b_col = None
+
+    for col in range(len(rows[0]) - 1):
+        gain = gi_split(rows, col)
+        #find best gains and best features
+        if gain > bg:
+            bg = gain
+            b_col = col
+    return b_col, bg
+    
+class Node:
+    def __init__(self, col=None, results=None, branches=None):
+        self.col = col #features
+        self.results = results # leaf cause no longer needed to branch to child
+        self.branches = branches #leads to chILD
+
+def build(rows):
+    labels = [row[1] for row in rows]
+    #count labels[0] as a starter to see if each label is the same to yes/no kind of thing
+    if labels.count(labels[0]) == len(labels):
+    #if each label is the same return each leaf as the same label no need to branch to child
+        return Node(results=labels[0])
+    #find best feature
+    col, gain = best_split(rows)
+    if col is None or gain <= 0:
+        #if best feature doesnt have a good split, end or too much impurity so keep same label
+        majority = max(set(labels), key=labels.count)
+        return Node(results=majority)
+    branches = {}
+    groups = split(rows, col)
+    # find ways to branch child nodes
+    for value, grp_rows in groups.items():
+        branches[value] = build(grp_rows)
+    return Node(col=col, branches=branches)
+        
+def prediction(tree, r):
+    #LEAVES
+    if tree.results is not None:
+        return tree.results
+    #FEATURES
+    value = r[tree.col]
+    # if features isn't going to branch to child then its unknown
+    if value not in tree.branches:
+        return None
+    return prediction(tree.branches[value], r)
+
+train = build(data)
+test = [True, False, False]
+print(prediction(train, test))
