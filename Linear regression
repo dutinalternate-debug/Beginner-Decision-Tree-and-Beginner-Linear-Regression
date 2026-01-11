@@ -1,0 +1,119 @@
+training_data = [
+    # Winter mornings (cold)
+    (6, 1, 2, 28),
+    (7, 2, 5, 32),
+    (8, 12, 3, 30),
+    (7, 1, 8, 25),
+    (6, 2, 1, 30),
+    
+    # Winter afternoons (cool)
+    (14, 1, 1, 42),
+    (15, 2, 8, 38),
+    (13, 12, 2, 40),
+    (16, 1, 4, 44),
+    (14, 2, 6, 36),
+    
+    # Spring mornings (mild)
+    (7, 3, 4, 45),
+    (8, 4, 2, 50),
+    (6, 5, 6, 55),
+    (7, 3, 1, 48),
+    (8, 5, 8, 52),
+    
+    # Spring afternoons (warm)
+    (14, 3, 3, 60),
+    (15, 4, 1, 68),
+    (16, 5, 5, 72),
+    (13, 3, 7, 58),
+    (14, 4, 2, 70),
+    
+    # Summer mornings (warm)
+    (6, 6, 2, 65),
+    (7, 7, 1, 70),
+    (8, 8, 3, 68),
+    (6, 6, 5, 62),
+    (7, 8, 0, 72),
+    
+    # Summer afternoons (hot)
+    (14, 6, 1, 85),
+    (15, 7, 0, 92),
+    (13, 8, 2, 88),
+    (16, 6, 4, 82),
+    (14, 7, 3, 89),
+    
+    # Fall mornings (cool)
+    (7, 9, 5, 58),
+    (6, 10, 4, 48),
+    (8, 11, 7, 38),
+    (7, 9, 2, 62),
+    (6, 11, 9, 35),
+    
+    # Fall afternoons (mild)
+    (14, 9, 2, 72),
+    (15, 10, 6, 62),
+    (13, 11, 3, 50),
+    (16, 9, 1, 75),
+    (14, 10, 8, 58),
+]
+
+def normalize(x, min_val, max_val):
+    return (x - min_val) / (max_val - min_val)
+
+def denormalize(value, min_val, max_val):
+    return value * (max_val - min_val) + min_val
+
+hour_range = 0, 23
+month_range = 1, 12
+cloud_range = 0, 10
+temp_range = 25, 95
+
+weights = [0.0, 0.0, 0.0]
+bias = 0
+lr = 0.0001
+
+def predict(features, weights, bias):
+    total = sum(f * w for f, w in zip(features, weights)) + bias
+    return total
+
+for epoch in range(1000):
+    total_error = 0
+
+    for hours, months, cloudcvrg, actual_temp in training_data:
+        normal_hours = normalize(hours, *hour_range)
+        normal_months = normalize(months, *month_range)
+        normal_cloudcvrg = normalize(cloudcvrg, *cloud_range)
+        normal_temp = normalize(actual_temp, *temp_range)
+
+        features = [normal_hours, normal_months, normal_cloudcvrg]
+
+        prediction = predict(features, weights, bias)
+        error = normal_temp - prediction
+        total_error += error ** 2
+
+        for i in range(len(weights)):
+            weights[i] += lr * error * features[i]
+        bias += lr * error
+
+        if (epoch + 1) % 200 == 0:
+            average_error = total_error / len(training_data)
+            print(f' average error is {average_error}')
+
+test_cases = [
+    (12, 7, 0, "Noon in July, clear skies"),     
+    (8, 1, 5, "8am in January, cloudy"),          
+    (15, 4, 2, "3pm in April, mostly clear"),    
+    (6, 10, 8, "6am in October, very cloudy"),   
+]
+
+for hour, month, cloudcvrg, description in test_cases:
+    norm_hour = normalize(hour, *hour_range)
+    norm_month = normalize(month, *month_range)
+    norm_cloudcvrg = normalize(cloudcvrg, *cloud_range)
+
+    features = [norm_hour, norm_month, norm_cloudcvrg]
+    
+    predictionize = predict(features, weights, bias)
+    final = denormalize(predictionize, *temp_range)
+
+print(f'{description}')
+print(f"predicted: {final:.1f} farenheiht")
