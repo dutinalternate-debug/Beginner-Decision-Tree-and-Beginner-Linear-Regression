@@ -74,7 +74,7 @@ class Node:
         self.branches = branches #leads to chILD
 
 def build(rows):
-    labels = [row[1] for row in rows]
+    labels = [row[-1] for row in rows]
     #count labels[0] as a starter to see if each label is the same to yes/no kind of thing
     if labels.count(labels[0]) == len(labels):
     #if each label is the same return each leaf as the same label no need to branch to child
